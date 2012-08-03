@@ -20,6 +20,11 @@ detective = require './browser-detective'
 
 startsWith = (string, prefix) -> string.indexOf(prefix) is 0
 replaceSlashes = (string, replacement) -> string.replace(/\//g, replacement)
+unique = (collection) ->
+	newCollection = []
+	for item in collection
+		newCollection.push item unless item in newCollection
+	newCollection
 
 # Argument parsing
 
@@ -53,9 +58,10 @@ while (sources.length)
 	continue if dependencyGraph[mod]?
 	continue if mod in excludedModules
 	src = fs.readFileSync path.join dir, mod + ".js"
-	dependencies = detective src
+	dependencies = unique detective src
 	dependencyGraph[mod] = dependencies
-	sources.push dependency for dependency in dependencies
+	for dependency in dependencies
+		sources.push dependency unless dependency is "require"
 
 console.dir dependencyGraph if argv.debug
 
