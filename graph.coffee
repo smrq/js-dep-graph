@@ -19,6 +19,7 @@ detective = require './browser-detective'
 # Utility functions
 
 startsWith = (string, prefix) -> string.indexOf(prefix) is 0
+normalizeSlashes = (string) -> string.replace(/\\/g, "/")                                  #"#Fix syntax highlighting for broken editors
 replaceSlashes = (string, replacement) -> string.replace(/\//g, replacement)
 unique = (collection) ->
 	newCollection = []
@@ -32,6 +33,7 @@ dir = argv.d ? __dirname
 
 sources = argv.s
 sources = [ sources ] unless Array.isArray(sources)
+sources = (normalizeSlashes(source) for source in sources)
 
 output = argv.o ? replaceSlashes(sources[0],"-") + ".png"
 
