@@ -2,6 +2,7 @@ fs = require 'fs'
 path = require 'path'
 graphviz = require 'graphviz'
 detective = require './browser-detective'
+graphdependencies = require './graph-dependencies'
 
 {argv} = require('optimist')
 	.demand('s')
@@ -18,7 +19,6 @@ detective = require './browser-detective'
 
 # Utility functions
 
-startsWith = (string, prefix) -> string.indexOf(prefix) is 0
 normalizeSlashes = (string) -> string.replace(/\\/g, "/")                                  #"#Fix syntax highlighting for broken editors
 replaceSlashes = (string, replacement) -> string.replace(/\//g, replacement)
 unique = (collection) ->
@@ -61,34 +61,19 @@ while (sources.length)
 	continue if mod in excludedModules
 	src = fs.readFileSync path.join dir, mod + ".js"
 	dependencies = unique detective src
-	dependencyGraph[mod] = dependencies
+	inheritances = []
+	dependencyGraph[mod] = {
+		dependencies
+		inheritances
+		displayName: if breaks then replaceSlashes(mod,"\\n") else mod
+	}
 	for dependency in dependencies
 		sources.push dependency unless dependency is "require"
 
 console.dir dependencyGraph if argv.debug
 
-# Generate visual graph
-g = graphviz.digraph "G"
-
-# Make graph nodes for all referenced modules
-nodes = {}
-for name, dependencies of dependencyGraph
-	displayName = if breaks then replaceSlashes(name,"\\n") else name
-	nodes[name] = g.addNode displayName
-	nodes[name].set "fillcolor", "white"
-	nodes[name].set "style", "filled"
-
-	# Node styling
-	for [prefix, key, value] in styles.prefixes
-		nodes[name].set key, value if startsWith name, prefix
-	for [dependency, key, value] in styles.dependencies
-		nodes[name].set key, value if dependency in dependencies
-
-# Add edges between nodes
-for name, dependencies of dependencyGraph
-	for dependency in dependencies
-		edge = g.addEdge nodes[name], nodes[dependency], { dir: "forward" } if nodes[dependency]?
-
-# Generate image
+g = graphdependencies dependencyGraph, styles
 console.log g.to_dot() if argv.debug
+
+console.log "Writing to #{output}"
 g.output "png", output
