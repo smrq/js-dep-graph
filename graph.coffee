@@ -5,7 +5,7 @@ generateDiagram = require './generate-diagram'
 	.describe('h', 'Show this help information.')
 	.alias('h', '?')
 	.alias('h', 'help')
-	.describe('s', 'Source modules to generate dependency graph for. This parameter may be specified multiple times to add multiple source modules to the graph. Supports wildcards.')
+	.describe('s', 'Source modules to generate dependency graph for. This parameter may be specified multiple times to add multiple source modules to the graph. Does not presently support wildcards.')
 	.describe('d', 'Base directory for modules.')
 	.describe('o', 'Output image filename.')
 	.describe('traverse', 'Direction to traverse the dependency graph from the source modules. Valid options are down, up, both, full.')
@@ -14,9 +14,12 @@ generateDiagram = require './generate-diagram'
 	.describe('externals', 'Include module dependencies external to the full dependency graph. This will include excluded modules and modules which are not found in the base directory.')
 	.describe('ex', 'Modules to exclude from the dependency graph. Supports wildcards.')
 	.describe('style', 'Define styling for modules. Syntax is: module,key,value . Supports wildcards.')
+	.describe('br', 'Convert / in module names to line breaks.')
+	.describe('neat', 'Use neato layout algorithm.')
+	.describe('random', 'Randomize layout step to change the final graph layout result.')
 	.describe('debug', 'Enable debug logging')
 	.string(['s', 'd', 'o', 'ex', 'style', 'traverse'])
-	.boolean(['h', 'externals', 'br', 'debug'])
+	.boolean(['h', 'br', 'externals', 'neat', 'random', 'debug'])
 	.wrap(80)
 
 if argv.h
@@ -26,7 +29,6 @@ if argv.h
 # Utility functions
 
 normalizeSlashes = (string) -> string.replace(/\\/g, "/")                                  #"#Fix syntax highlighting for broken editors
-replaceSlashes = (string, replacement) -> string.replace(/\//g, replacement)
 asArray = (input) ->
 	return [] unless input?
 	return input if _.isArray(input)
@@ -43,6 +45,9 @@ options.styles = (style.split(",") for style in asArray(argv.style))
 options.debug = argv.debug
 options.traverse = argv.traverse
 options.externals = argv.externals
+options.linebreak = argv.br
+options.neat = argv.neat
+options.random = argv.random
 
 nodes = generateNodes options
 g = generateDiagram nodes, options.styles

@@ -1,24 +1,31 @@
 graphviz = require 'graphviz'
-wildcard = require 'wildcard'
 _ = require 'underscore'
 
 startsWith = (string, prefix) -> string.indexOf(prefix) is 0
 
-exports = module.exports = (nodes, styles) ->
+exports = module.exports = (nodes, options) ->
 
 	# Make graph
 	g = graphviz.digraph "G"
 
+	# Graph-wide styling
+	if options.neat
+		g.set 'layout', 'neato'
+		g.set 'overlap', false
+		g.set 'splines', true
+	if options.random
+		g.set 'start', 'random'
+
 	# Add graph nodes
-	for x, node of nodes
+	for name, node of nodes
 		node.graphNode = g.addNode node.name
 		node.graphNode.set "fillcolor", "white"
 		node.graphNode.set "style", "filled"
-		for [pattern, key, value] in styles
-			node.graphNode.set key, value if wildcard(pattern, node.name)
+		for [pattern, key, value] in options.styles
+			node.graphNode.set key, value if pattern.test(name)
 
 	# Add edges between nodes
-	for x, node of nodes
+	for name, node of nodes
 		for dependency in node.dependencies
 			if nodes[dependency]?
 				edge = g.addEdge node.graphNode, nodes[dependency].graphNode, { dir: "forward" }

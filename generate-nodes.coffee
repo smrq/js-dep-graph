@@ -6,6 +6,7 @@ _ = require 'underscore'
 detective = require './browser-detective'
 
 normalizeSlashes = (string) -> string.replace(/\\/g, "/")                                  #"#Fix syntax highlighting for broken editors
+replaceSlashes = (string, replacement) -> string.replace(/\//g, replacement)
 
 exports = module.exports = (options) ->
 
@@ -22,20 +23,19 @@ exports = module.exports = (options) ->
 		modPath = path.join options.directory, mod + ".js"
 		src = fs.readFileSync modPath
 		nodes[mod] =
-			name: mod
+			name: if options.linebreak then replaceSlashes(mod, "\\n") else mod
 			dependencies: _(detective src).uniq()
 			inheritances: [] # not yet implemented
 			dependents: []
 
 	# Generate reverse dependency information
-	for x, node of nodes
-		nodes[dependency]?.dependents.push node.name for dependency in node.dependencies
+	for name, node of nodes
+		nodes[dependency]?.dependents.push name for dependency in node.dependencies
 
 	# Perform traversal
 	if options.sources.length > 0
 		traverse = (sources, direction) ->
 			traversedNodes = {}
-			console.log traversedNodes
 			recur = (sources) ->
 				for source in sources when not traversedNodes[source]?
 					do (node = nodes[source]) ->
